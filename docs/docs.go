@@ -19,12 +19,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "",
-	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Version:          "1.0",                                    // API version (you should update this)
+	Host:             "localhost:8080",                         // Your server's host (can be your actual host)
+	BasePath:         "/",                                      // Base path for API routes
+	Schemes:          []string{"http", "https"},                // Schemes supported (e.g., HTTP or HTTPS)
+	Title:            "ToDoList API",                           // Your API title (e.g., the name of your project)
+	Description:      "This is the ToDoList API documentation", // Description of your API
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
