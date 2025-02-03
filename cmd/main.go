@@ -49,6 +49,8 @@ func initDatabase() *gorm.DB {
 	})
 	if err != nil {
 		log.Fatalf("Failed to connect to the database: %v", err)
+	} else {
+		log.Println("Successfully connected to the database")
 	}
 
 	// Auto-migrate models
@@ -82,6 +84,17 @@ func main() {
 
 	log.Println("Starting the application...")
 	r := gin.New()
+	r.GET("/api", func(c *gin.Context) {
+		// This handler will now show API documentation or a list of available routes
+		c.JSON(200, gin.H{
+			"message": "Welcome to the ToDoList API!",
+			"routes": []string{
+				"/users",
+				"/tasks",
+				"/tags",
+			},
+		})
+	})
 
 	router.SetupRoutes(r, &h)
 	// Swagger documentation route

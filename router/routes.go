@@ -2,6 +2,7 @@ package router
 
 import (
 	"ToDoList_App/handler"
+	"log"
 
 	"github.com/gin-gonic/gin"
 )
@@ -10,9 +11,10 @@ func SetupRoutes(router *gin.Engine, h *handler.Handler) {
 	// User routes
 	userGroup := router.Group("/users")
 	{
+		log.Println("Registering /users route")
 		userGroup.POST("/", h.CreateUser)
 		userGroup.GET("/", h.GetUsers)
-		userGroup.PUT("/", h.UpdateUser)
+		userGroup.PUT("/update", h.UpdateUser)
 	}
 
 	// Task routes
