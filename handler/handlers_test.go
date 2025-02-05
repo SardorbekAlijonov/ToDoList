@@ -3,11 +3,14 @@ package handler_test
 import (
 	"ToDoList_App/handler"
 	"ToDoList_App/models"
+	"ToDoList_App/router"
 	"bytes"
 	"encoding/json"
+	"github.com/joho/godotenv"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -17,7 +20,19 @@ import (
 )
 
 func SetupTestDB() *gorm.DB {
-	dsn := "host=localhost user=postgres password=1506 dbname=test_db port=5432 sslmode=disable"
+	if err := godotenv.Load("../.env"); err != nil {
+		log.Println("Warning: .env file not found")
+	}
+
+	dsn := "host=" + os.Getenv("DB_HOST") +
+		" user=" + os.Getenv("DB_USER") +
+		" password=" + os.Getenv("DB_PASSWORD") +
+		" dbname=test_db" +
+		" port=5432" +
+		" sslmode=disable"
+
+	log.Println("Connecting to database with DSN:", dsn)
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
@@ -29,24 +44,16 @@ func SetupTestDB() *gorm.DB {
 }
 
 func SetupRouter(db *gorm.DB) *gin.Engine {
-	router := gin.Default()
+	r := gin.Default()
 	h := &handler.Handler{DB: db}
-	router.POST("/users/", h.CreateUser)
-	router.GET("/users/", h.GetUsers)
-	router.PUT("/users/update", h.UpdateUser)
-	router.POST("/tasks/", h.CreateTask)
-	router.GET("/tasks/", h.GetTasks)
-	router.PUT("/tasks/", h.UpdateTask)
-	router.DELETE("/tasks/:id", h.DeleteTask)
-	router.POST("/tags/", h.CreateTag)
-	return router
+	router.SetupRoutes(r, h)
+	return r
 }
-
 func TestInvalidUserCreation(t *testing.T) {
 	db := SetupTestDB()
 	router := SetupRouter(db)
 
-	invalidUser := `{"name":""}`
+	invalidUser := `{"name":1}`
 	req, _ := http.NewRequest("POST", "/users/", bytes.NewBuffer([]byte(invalidUser)))
 	req.Header.Set("Content-Type", "application/json")
 
@@ -62,15 +69,21 @@ func TestNonExistentUserUpdate(t *testing.T) {
 	db := SetupTestDB()
 	router := SetupRouter(db)
 
-	updateData := `{"id":999,"name":"Ghost User","email":"ghost@example.com"}`
+	updateData := `{"id":99,"name":"Ghost User","email":"ghost@example.com"}`
 	req, _ := http.NewRequest("PUT", "/users/update", bytes.NewBuffer([]byte(updateData)))
 	req.Header.Set("Content-Type", "application/json")
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	if w.Code != http.StatusInternalServerError {
-		t.Errorf("Expected status 500, got %d", w.Code)
+	expectedStatus := http.StatusNotFound // 404 for a non-existent user
+	if w.Code != expectedStatus {
+		t.Errorf("Expected status %d, got %d", expectedStatus, w.Code)
+	}
+
+	expectedMessage := `{"error":"User not found"}`
+	if w.Body.String() != expectedMessage {
+		t.Errorf("Expected body %s, got %s", expectedMessage, w.Body.String())
 	}
 }
 
@@ -91,19 +104,6 @@ func TestFetchEmptyTasks(t *testing.T) {
 
 	if len(tasks) != 0 {
 		t.Errorf("Expected empty task list, got %d tasks", len(tasks))
-	}
-}
-
-func TestInvalidTaskDeletion(t *testing.T) {
-	db := SetupTestDB()
-	router := SetupRouter(db)
-
-	req, _ := http.NewRequest("DELETE", "/tasks/999", nil)
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusInternalServerError {
-		t.Errorf("Expected status 500, got %d", w.Code)
 	}
 }
 

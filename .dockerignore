@@ -1,0 +1,12 @@
+# Ignore the Go build output
+main
+
+# Ignore version control directories
+.git
+.gitignore
+
+# Ignore system files
+.DS_Store
+
+# Ignore local dependencies and build artifacts
+node_modules
